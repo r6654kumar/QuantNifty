@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuantNifty | NIFTY 50 Sector Alpha & Macro Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="top-nav">
+      <div class="nav-brand">
+        <div class="logo-icon">Q</div>
+        <div class="brand-text">
+          <h1>QuantNifty <span>Terminal</span></h1>
+          <p class="subtitle">Short-Term Directional Sector Model & Statistical Edge Lab</p>
+        </div>
+      </div>
+
+      <div class="nav-center-pill">
+        <div class="nifty-spot-pill">
+          <span class="label">NIFTY 50</span>
+          <span class="val" id="headerNiftyPrice">--</span>
+          <span class="badge" id="headerNiftyChange">--%</span>
+        </div>
+        <div class="vix-pill">
+          <span class="label">INDIA VIX</span>
+          <span class="val" id="headerVixPrice">--</span>
+          <span class="badge" id="headerVixChange">--%</span>
+        </div>
+        <div class="regime-badge" id="headerRegimeBadge">
+          <span class="pulse-dot"></span>
+          <span id="headerRegimeText">INITIALIZING</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <div class="last-sync-time" id="lastSyncTime">Syncing...</div>
+        <button class="btn btn-primary" id="refreshBtn" onclick="fetchLiveSnapshot(true)">
+          <span class="btn-icon">⚡</span> Refresh Live
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+      <!-- Row 1: Core Signal Gauge, Market Breadth, Macro Proxies -->
+      <div class="grid-3">
+        <!-- Directional Signal Card -->
+        <div class="glass-card card-signal">
+          <div class="card-header">
+            <h3>Directional Sector Score</h3>
+            <span class="tag-info" id="signalAgreementTag">100% Alignment</span>
+          </div>
+
+          <div class="score-display">
+            <div class="score-value-box">
+              <div class="score-number" id="directionalScore">0.0</div>
+              <div class="score-sub">Scale: -100 (Bearish) to +100 (Bullish)</div>
+            </div>
+            <div class="regime-indicator" id="regimeStatusBox">
+              <span id="regimeStatusText">NEUTRAL</span>
+            </div>
+          </div>
+
+          <!-- Component Score Bars -->
+          <div class="component-breakdown">
+            <div class="comp-row">
+              <span class="comp-label">Sector Momentum (40%)</span>
+              <div class="progress-bar-bg">
+                <div class="progress-fill" id="fillMom" style="width: 50%;"></div>
+              </div>
+              <span class="comp-val" id="valMom">0.0</span>
+            </div>
+            <div class="comp-row">
+              <span class="comp-label">Relative Strength (25%)</span>
+              <div class="progress-bar-bg">
+                <div class="progress-fill" id="fillRs" style="width: 50%;"></div>
+              </div>
+              <span class="comp-val" id="valRs">0.0</span>
+            </div>
+            <div class="comp-row">
+              <span class="comp-label">Market Breadth (20%)</span>
+              <div class="progress-bar-bg">
+                <div class="progress-fill" id="fillBreadth" style="width: 50%;"></div>
+              </div>
+              <span class="comp-val" id="valBreadth">0.0</span>
+            </div>
+            <div class="comp-row">
+              <span class="comp-label">Global Macro (15%)</span>
+              <div class="progress-bar-bg">
+                <div class="progress-fill" id="fillMacro" style="width: 50%;"></div>
+              </div>
+              <span class="comp-val" id="valMacro">0.0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Market Breadth Card -->
+        <div class="glass-card card-breadth">
+          <div class="card-header">
+            <h3>Sector Participation Breadth</h3>
+            <span class="tag-neutral" id="adRatioTag">A/D: --</span>
+          </div>
+
+          <div class="breadth-stat-grid">
+            <div class="stat-box adv">
+              <div class="stat-num" id="advCount">0</div>
+              <div class="stat-lbl">Advancing</div>
+            </div>
+            <div class="stat-box dec">
+              <div class="stat-num" id="decCount">0</div>
+              <div class="stat-lbl">Declining</div>
+            </div>
+            <div class="stat-box unch">
+              <div class="stat-num" id="unchCount">0</div>
+              <div class="stat-lbl">Unchanged</div>
+            </div>
+          </div>
+
+          <div class="breadth-bar-container">
+            <div class="breadth-bar-adv" id="breadthAdvBar" style="width: 50%;"></div>
+            <div class="breadth-bar-dec" id="breadthDecBar" style="width: 50%;"></div>
+          </div>
+
+          <div class="breadth-note">
+            <span>Constituent Architecture:</span> Modular layer (constituent stock ticks will attach here).
+          </div>
+        </div>
+
+        <!-- Macro Indicators Card -->
+        <div class="glass-card card-macro">
+          <div class="card-header">
+            <h3>Global Macro & Risk Drivers</h3>
+            <span class="tag-live">Global Proxies</span>
+          </div>
+          <div class="macro-grid" id="macroGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Relative Strength Chart & Live Sectors Table -->
+      <div class="grid-2">
+        <!-- Relative Strength Bar Chart -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>Sector Relative Strength vs NIFTY 50 (%)</h3>
+            <span class="tag-neutral">Spread: Sector % - Nifty %</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="relativeStrengthChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Live Sector Indices Table -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3>Live Sector Indices Snapshot</h3>
+            <input type="text" id="sectorSearch" placeholder="Filter sectors..." oninput="filterSectors()" class="table-search" />
+          </div>
+          <div class="table-scroll">
+            <table class="data-table" id="sectorsTable">
+              <thead>
+                <tr>
+                  <th>Index</th>
+                  <th class="num">LTP (₹)</th>
+                  <th class="num">Change</th>
+                  <th class="num">% Chg</th>
+                  <th class="num">Rel Strength</th>
+                  <th class="num">P/E</th>
+                </tr>
+              </thead>
+              <tbody id="sectorsTableBody">
+                <!-- Injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Quantitative Backtesting Engine -->
+      <div class="glass-card card-backtest">
+        <div class="card-header">
+          <div>
+            <h3>Statistical Backtesting & Edge Validation Engine</h3>
+            <p class="card-desc">Evaluates the Sector Directional Model against 4 benchmark baselines to verify whether statistically significant predictive edge exists.</p>
+          </div>
+
+          <div class="backtest-controls">
+            <label>Prediction Horizon:</label>
+            <div class="pill-group" id="horizonPills">
+              <button class="pill-btn active" data-horizon="5m" onclick="selectHorizon('5m')">5m</button>
+              <button class="pill-btn" data-horizon="15m" onclick="selectHorizon('15m')">15m</button>
+              <button class="pill-btn" data-horizon="30m" onclick="selectHorizon('30m')">30m</button>
+              <button class="pill-btn" data-horizon="60m" onclick="selectHorizon('60m')">60m</button>
+            </div>
+            <button class="btn btn-secondary" onclick="runBacktest()">
+              <span>▶</span> Run Simulation
+            </button>
+          </div>
+        </div>
+
+        <!-- Comparative Metrics Table -->
+        <div class="backtest-results-grid">
+          <div class="table-scroll">
+            <table class="data-table metrics-table" id="backtestMetricsTable">
+              <thead>
+                <tr>
+                  <th>Strategy / Baseline</th>
+                  <th class="num">Signals</th>
+                  <th class="num">Win Rate</th>
+                  <th class="num">Precision</th>
+                  <th class="num">Profit Factor</th>
+                  <th class="num">Avg Trade %</th>
+                  <th class="num">Max Drawdown</th>
+                  <th class="num">Sharpe Ratio</th>
+                  <th class="num">Net Return %</th>
+                </tr>
+              </thead>
+              <tbody id="backtestMetricsBody">
+                <!-- Injected by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Equity Curve Comparison Chart -->
+          <div class="equity-chart-box">
+            <div class="equity-chart-header">
+              <span>Cumulative Net Equity Curve (2 bps slippage/cost deducted)</span>
+            </div>
+            <div class="chart-wrapper-equity">
+              <canvas id="equityCurveChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div>QuantNifty Research System &copy; 2026. All strategies evaluated with zero look-ahead bias and slippage deduction. Research only — no live trade execution.</div>
+    </footer>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

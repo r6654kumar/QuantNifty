@@ -10,3 +10,5 @@ numpy>=1.26.0
 rich>=13.7.0
 python-dotenv>=1.0.0
 pytest>=7.4.0
+fastapi>=0.110.0
+uvicorn>=0.28.0
