@@ -47,9 +47,33 @@ if not static_dir.exists():
     static_dir.mkdir(parents=True, exist_ok=True)
 
 
+import threading
+import time
+
+def _background_data_scheduler():
+    """Background worker running automated data collection cycles during trading hours."""
+    logger.info("Background market data collection loop initialized.")
+    while True:
+        try:
+            time.sleep(300)  # Every 5 minutes
+            collector.collect_once(force=False)
+        except Exception as e:
+            logger.warning(f"Background data collection loop encountered error: {e}")
+
+@app.on_event("startup")
+def on_startup():
+    scheduler_thread = threading.Thread(target=_background_data_scheduler, daemon=True)
+    scheduler_thread.start()
+    logger.info("QuantNifty FastAPI application startup complete. Background scheduler thread running.")
+
+
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
+    return {
+        "status": "ok",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "trading_hours": collector.is_within_trading_hours(),
+    }
 
 
 @app.get("/api/snapshot")
