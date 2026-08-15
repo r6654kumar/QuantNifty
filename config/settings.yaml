@@ -9,6 +9,15 @@ collector:
   retry_delay_seconds: 2.0
   min_request_gap_seconds: 3.0 # Guard against aggressive polling
 
+  # Trading hours gate (IST) — periodic background collection window
+  trading_hours:
+    start_hour: 8              # 8:00 AM IST
+    start_minute: 0
+    end_hour: 14               # 2:00 PM IST
+    end_minute: 0
+    timezone: "Asia/Kolkata"
+    weekdays_only: false       # Allow collection on all days if desired
+
   # Target Indices to track
   indices:
     - "NIFTY 50"

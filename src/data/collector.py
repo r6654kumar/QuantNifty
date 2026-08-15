@@ -17,6 +17,11 @@ from src.utils.logging_config import setup_logger
 logger = setup_logger("quant_nifty.collector")
 console = Console()
 
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
 
 class DataCollector:
     """Orchestrates periodic collection of NSE indices, feature extraction, and signal scoring."""
@@ -31,6 +36,15 @@ class DataCollector:
         self.interval_seconds = collector_cfg.get("interval_seconds", 300)
         self.target_indices = collector_cfg.get("indices", [])
         self.macro_tickers = collector_cfg.get("macro_tickers", {})
+
+        # Trading hours gate
+        th = collector_cfg.get("trading_hours", {})
+        self.trading_start_hour = th.get("start_hour", 8)
+        self.trading_start_minute = th.get("start_minute", 0)
+        self.trading_end_hour = th.get("end_hour", 14)
+        self.trading_end_minute = th.get("end_minute", 0)
+        self.trading_tz = ZoneInfo(th.get("timezone", "Asia/Kolkata"))
+        self.weekdays_only = th.get("weekdays_only", True)
 
         self.nse_client = NSEClient(
             base_url=nse_cfg.get("base_url", "https://www.nseindia.com"),
@@ -49,6 +63,7 @@ class DataCollector:
             component_weights=signals_cfg.get("component_weights"),
             regime_thresholds=signals_cfg.get("regime_thresholds"),
         )
+        self._last_result = None
 
         # Initialize database schema
         init_db()
@@ -61,10 +76,32 @@ class DataCollector:
         with open(path, "r", encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
 
-    def collect_once(self) -> Dict[str, any]:
-        """Runs a single live collection cycle, extracts features, calculates score, persists, and displays."""
+    def is_within_trading_hours(self) -> bool:
+        """Returns True if current IST time is within configured trading window."""
+        now_ist = datetime.now(self.trading_tz)
+        # Weekend check
+        if self.weekdays_only and now_ist.weekday() >= 5:  # 5=Saturday, 6=Sunday
+            return False
+        # Time window check
+        start = now_ist.replace(hour=self.trading_start_hour, minute=self.trading_start_minute, second=0, microsecond=0)
+        end = now_ist.replace(hour=self.trading_end_hour, minute=self.trading_end_minute, second=0, microsecond=0)
+        return start <= now_ist <= end
+
+    def collect_once(self, force: bool = False) -> Dict[str, any]:
+        """
+        Runs a live collection cycle, extracts features, calculates score, persists, and displays.
+        If force=True (e.g. user clicked Refresh Live), it unconditionally fetches and writes to DB.
+        """
+        is_open = self.is_within_trading_hours()
+
+        # Gate: skip periodic background collection outside trading hours if not forced
+        if not is_open and not force and self._last_result is not None:
+            res = dict(self._last_result)
+            res["market_closed"] = True
+            return res
+
         cycle_time = datetime.now(timezone.utc)
-        logger.info(f"Starting data collection cycle at {cycle_time.isoformat()}")
+        logger.info(f"Starting data collection cycle (force={force}, market_open={is_open}) at {cycle_time.isoformat()}")
 
         # 1. Fetch NSE Indices
         try:
@@ -96,13 +133,16 @@ class DataCollector:
         # 5. Display Formatted Dashboard
         self._display_summary(indices, macro_data, features, signal)
 
-        return {
+        result = {
             "indices": indices,
             "macro": macro_data,
             "features": features,
             "signal": signal,
             "timestamp": cycle_time,
+            "market_closed": not is_open,
         }
+        self._last_result = result
+        return result
 
     def _persist_data(self, indices: Dict[str, IndexData], macro_data: dict, timestamp: datetime):
         """Saves snapshots into the database."""

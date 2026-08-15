@@ -4,13 +4,45 @@ let currentHorizon = '15m';
 let rsChart = null;
 let equityChart = null;
 
+// Trading Hours Config (IST)
+const TRADING_START_HOUR = 8;
+const TRADING_START_MIN = 0;
+const TRADING_END_HOUR = 14;
+const TRADING_END_MIN = 0;
+
+function isWithinTradingHours() {
+  const now = new Date();
+  // Convert to IST (UTC+5:30)
+  const istOffset = 5.5 * 60; // minutes
+  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const istMinutes = utcMinutes + istOffset;
+  const istHour = Math.floor((istMinutes / 60) % 24);
+  const istMin = Math.floor(istMinutes % 60);
+  const istDay = now.getUTCDay(); // 0=Sunday, 6=Saturday
+
+  // Weekend check
+  if (istDay === 0 || istDay === 6) return false;
+
+  const startMins = TRADING_START_HOUR * 60 + TRADING_START_MIN;
+  const endMins = TRADING_END_HOUR * 60 + TRADING_END_MIN;
+  const currentMins = istHour * 60 + istMin;
+  return currentMins >= startMins && currentMins <= endMins;
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   initCharts();
   fetchLiveSnapshot();
   runBacktest();
-  // Polling every 30 seconds
-  setInterval(() => fetchLiveSnapshot(false), 30000);
+
+  // Smart polling: only during trading hours, every 5 minutes (300s)
+  setInterval(() => {
+    if (isWithinTradingHours()) {
+      fetchLiveSnapshot(false);
+    } else {
+      document.getElementById('lastSyncTime').innerText = 'Market Closed (8:00 AM - 2:00 PM IST)';
+    }
+  }, 300000); // 5 minutes = 300,000ms
 });
 
 /* ==========================================================================

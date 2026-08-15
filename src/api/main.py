@@ -51,29 +51,19 @@ def health_check():
 def get_live_snapshot(refresh: bool = False):
     """
     Returns the latest market snapshot, engineered features, and directional sector score.
-    If refresh=True, queries live NSE/Yahoo endpoints and updates the database.
+    If refresh=True, queries live NSE/Yahoo endpoints and updates the database unconditionally.
     """
-    if refresh:
-        result = collector.collect_once()
-        return {
-            "timestamp": result["timestamp"].isoformat(),
-            "nifty_price": result["features"].nifty_price if result["features"] else None,
-            "indices": {k: v.model_dump() for k, v in result["indices"].items()},
-            "macro": {k: v.model_dump() for k, v in result["macro"].items()},
-            "features": result["features"].model_dump() if result["features"] else None,
-            "signal": result["signal"].model_dump() if result["signal"] else None,
-        }
-    else:
-        # Quick fetch without hammering external API if cached recently
-        result = collector.collect_once()
-        return {
-            "timestamp": result["timestamp"].isoformat(),
-            "nifty_price": result["features"].nifty_price if result["features"] else None,
-            "indices": {k: v.model_dump() for k, v in result["indices"].items()},
-            "macro": {k: v.model_dump() for k, v in result["macro"].items()},
-            "features": result["features"].model_dump() if result["features"] else None,
-            "signal": result["signal"].model_dump() if result["signal"] else None,
-        }
+    result = collector.collect_once(force=refresh)
+    market_closed = result.get("market_closed", False)
+    return {
+        "timestamp": result["timestamp"].isoformat(),
+        "market_closed": market_closed,
+        "nifty_price": result["features"].nifty_price if result["features"] else None,
+        "indices": {k: v.model_dump() for k, v in result["indices"].items()} if result["indices"] else {},
+        "macro": {k: v.model_dump() for k, v in result["macro"].items()} if result["macro"] else {},
+        "features": result["features"].model_dump() if result["features"] else None,
+        "signal": result["signal"].model_dump() if result["signal"] else None,
+    }
 
 
 @app.get("/api/backtest")
