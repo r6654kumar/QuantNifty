@@ -155,17 +155,36 @@
               <div class="ai-headline" id="aiHeadline">Synthesizing multi-factor signals...</div>
             </div>
           </div>
-          <div class="ai-meta-tags">
-            <span class="tag-regime" id="aiRegimeTag">NEUTRAL</span>
-            <span class="tag-confidence" id="aiConfidenceTag">100% Consensus</span>
+          
+          <div class="ai-header-right">
+            <!-- Engine Toggle Tabs -->
+            <div class="ai-tabs-nav">
+              <button class="ai-tab-btn active" id="tabRuleBased" onclick="switchAITab('rule_based')">
+                <span class="tab-icon">📊</span> Rule-Based Quant
+              </button>
+              <button class="ai-tab-btn" id="tabGemini" onclick="switchAITab('gemini_based')">
+                <span class="tab-icon">✨</span> Gemini AI
+              </button>
+            </div>
+
+            <div class="ai-meta-tags">
+              <span class="tag-regime" id="aiRegimeTag">NEUTRAL</span>
+              <span class="tag-confidence" id="aiConfidenceTag">100% Consensus</span>
+            </div>
           </div>
         </div>
 
         <div class="ai-body-grid">
           <!-- Left Column: Synthesis & Market Narrative -->
           <div class="ai-narrative-col">
-            <div class="ai-section-title">📊 Executive Market Synthesis</div>
-            <p class="ai-text-syn" id="aiExecSynthesis">Analyzing real-time sector momentum and order flow...</p>
+            <!-- Active Synthesis Callout Box -->
+            <div class="dual-ai-box active-engine-box" id="activeEngineBox">
+              <div class="ai-section-title">
+                <span class="box-badge" id="activeEngineBadge">RULE-BASED</span>
+                <span id="activeEngineTitle">Executive Market Synthesis</span>
+              </div>
+              <p class="ai-text-syn" id="aiExecSynthesis">Analyzing real-time sector momentum and order flow...</p>
+            </div>
 
             <div class="ai-section-title">🔄 Sector Flow & Leadership</div>
             <p class="ai-text-sub" id="aiSectorFlow">Tracking sector relative strength leadership vectors.</p>

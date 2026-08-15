@@ -723,6 +723,49 @@ body {
   margin-top: 2px;
 }
 
+.ai-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ai-tabs-nav {
+  display: flex;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 3px;
+}
+
+.ai-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25s ease;
+}
+
+.ai-tab-btn:hover {
+  color: #fff;
+}
+
+.ai-tab-btn.active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(99, 102, 241, 0.3) 100%);
+  color: #fff;
+  font-weight: 700;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
 .ai-meta-tags {
   display: flex;
   gap: 8px;
@@ -757,7 +800,48 @@ body {
 .ai-narrative-col {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+}
+
+.dual-ai-box {
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.3s;
+}
+
+.deterministic-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.gemini-box {
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.6) 0%, rgba(49, 46, 129, 0.4) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.box-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.det-badge {
+  background: rgba(56, 189, 248, 0.2);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.gemini-badge {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.4);
 }
 
 .ai-section-title {
@@ -766,7 +850,8 @@ body {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-top: 4px;
+  display: flex;
+  align-items: center;
 }
 
 .ai-text-syn {

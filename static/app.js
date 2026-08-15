@@ -161,20 +161,56 @@ function renderSnapshot(data) {
   }
 }
 
+// Store the full AI summary for tab switching
+let _aiSummaryCache = null;
+let _activeAITab = 'rule_based';
+
 function renderAISummary(summary) {
   if (!summary) return;
 
+  // Cache for tab switching
+  _aiSummaryCache = summary;
+
+  // Set initial tab from server or keep current
+  _activeAITab = _activeAITab || summary.active_tab || 'rule_based';
+
+  // Render the active tab's data
+  _renderAITab(_activeAITab);
+}
+
+function switchAITab(tabName) {
+  _activeAITab = tabName;
+
+  // Update tab button active states
+  document.getElementById('tabRuleBased').classList.toggle('active', tabName === 'rule_based');
+  document.getElementById('tabGemini').classList.toggle('active', tabName === 'gemini_based');
+
+  if (_aiSummaryCache) {
+    _renderAITab(tabName);
+  }
+}
+
+function _renderAITab(tabName) {
+  const summary = _aiSummaryCache;
+  if (!summary) return;
+
+  // Pick the engine detail object
+  const detail = tabName === 'gemini_based' ? summary.gemini_based : summary.rule_based;
+  if (!detail) return;
+
+  const isGemini = tabName === 'gemini_based';
+
   // 1. Headline & Badges
-  document.getElementById('aiHeadline').innerText = summary.headline || 'Quant briefing synthesized';
-  
+  document.getElementById('aiHeadline').innerText = detail.headline || 'Quant briefing synthesized';
+
   const regimeEl = document.getElementById('aiRegimeTag');
-  const regime = summary.regime || 'NEUTRAL';
+  const regime = detail.regime || 'NEUTRAL';
   const regimeClass = regime.includes('BULLISH') ? 'bullish' : (regime.includes('BEARISH') ? 'bearish' : 'neutral');
   regimeEl.className = `tag-regime ${regimeClass}`;
   regimeEl.innerText = regime.replace('_', ' ');
 
   const confTag = document.getElementById('aiConfidenceTag');
-  confTag.innerText = `${summary.driver_consensus_pct}% Consensus`;
+  confTag.innerText = `${detail.driver_consensus_pct}% Consensus`;
 
   // Dynamic card glow based on regime
   const aiCard = document.getElementById('aiCard');
@@ -189,15 +225,31 @@ function renderAISummary(summary) {
     aiCard.style.boxShadow = '0 10px 30px rgba(234, 179, 8, 0.12)';
   }
 
-  // 2. Narrative Columns
-  document.getElementById('aiExecSynthesis').innerText = summary.executive_synthesis || '';
-  document.getElementById('aiSectorFlow').innerText = summary.sector_flow_narrative || '';
-  document.getElementById('aiMacroClimate').innerText = summary.macro_risk_narrative || '';
+  // 2. Active Engine Box styling
+  const engineBox = document.getElementById('activeEngineBox');
+  const engineBadge = document.getElementById('activeEngineBadge');
+  const engineTitle = document.getElementById('activeEngineTitle');
+
+  if (isGemini) {
+    engineBox.className = 'dual-ai-box active-engine-box gemini-box';
+    engineBadge.className = 'box-badge gemini-badge';
+    engineBadge.innerText = 'GEMINI AI';
+    engineTitle.innerText = '✨ Google Gemini Deep Reasoning';
+  } else {
+    engineBox.className = 'dual-ai-box active-engine-box deterministic-box';
+    engineBadge.className = 'box-badge det-badge';
+    engineBadge.innerText = 'RULE-BASED';
+    engineTitle.innerText = '📊 Executive Market Synthesis';
+  }
+
+  document.getElementById('aiExecSynthesis').innerText = detail.executive_synthesis || '';
+  document.getElementById('aiSectorFlow').innerText = detail.sector_flow_narrative || '';
+  document.getElementById('aiMacroClimate').innerText = detail.macro_risk_narrative || '';
 
   // 3. Bullets
   const bulletsBox = document.getElementById('aiBulletsBox');
-  if (summary.key_bullet_points && summary.key_bullet_points.length > 0) {
-    bulletsBox.innerHTML = summary.key_bullet_points
+  if (detail.key_bullet_points && detail.key_bullet_points.length > 0) {
+    bulletsBox.innerHTML = detail.key_bullet_points
       .map(b => `<div class="ai-bullet-item">${b}</div>`)
       .join('');
     bulletsBox.style.display = 'flex';
@@ -206,7 +258,7 @@ function renderAISummary(summary) {
   }
 
   // 4. Options Playbook
-  const opt = summary.options_playbook;
+  const opt = detail.options_playbook;
   if (opt) {
     const biasCard = document.getElementById('optionsBiasCard');
     biasCard.className = `options-bias-card ${regimeClass}`;

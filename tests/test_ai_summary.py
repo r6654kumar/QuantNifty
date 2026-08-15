@@ -49,11 +49,22 @@ def test_ai_summary_generation_bearish():
 
     result = engine.generate_summary(features, signal, indices, {})
 
-    assert result.directional_score == -30.33
-    assert result.regime == "MILDLY_BEARISH"
-    assert result.driver_consensus_pct == 100.0
-    assert "BUY NIFTY PE" in result.options_playbook.bias
-    assert result.options_playbook.atm_strike == 24350
-    assert "24350 PE" in result.options_playbook.recommended_strike
-    assert result.options_playbook.itm_strike == 24400
-    assert len(result.key_bullet_points) >= 4
+    # Validate dual-engine structure
+    assert result.rule_based is not None
+    assert result.gemini_based is not None
+    assert result.active_tab == "rule_based"
+
+    rb = result.rule_based
+    assert rb.directional_score == -30.33
+    assert rb.regime == "MILDLY_BEARISH"
+    assert rb.driver_consensus_pct == 100.0
+    assert "BUY NIFTY PE" in rb.options_playbook.bias
+    assert rb.options_playbook.atm_strike == 24350
+    assert "24350 PE" in rb.options_playbook.recommended_strike
+    assert rb.options_playbook.itm_strike == 24400
+    assert len(rb.key_bullet_points) >= 4
+
+    gb = result.gemini_based
+    assert gb.regime == "MILDLY_BEARISH"
+    assert gb.executive_synthesis  # Gemini synthesis should have content
+    assert gb.options_playbook.atm_strike == 24350
