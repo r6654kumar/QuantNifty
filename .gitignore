@@ -1,0 +1,26 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Environment secrets
+.env
+
+# Data
+data/raw/*.db
+data/raw/*.sqlite3
+data/raw/*.log
+data/processed/
+
+# IDE
+.idea/
+.vscode/
+*.swp

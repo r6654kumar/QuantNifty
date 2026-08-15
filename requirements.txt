@@ -1,0 +1,12 @@
+curl_cffi>=0.7.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+pyyaml>=6.0.1
+sqlalchemy>=2.0.25
+psycopg2-binary>=2.9.9
+yfinance>=0.2.35
+pandas>=2.1.0
+numpy>=1.26.0
+rich>=13.7.0
+python-dotenv>=1.0.0
+pytest>=7.4.0

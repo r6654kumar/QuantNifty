@@ -1,0 +1,51 @@
+# ==============================================================================
+# NIFTY Quantitative Market Analysis Engine Settings
+# ==============================================================================
+
+collector:
+  interval_seconds: 300       # 5 minutes polling interval
+  timeout_seconds: 15
+  max_retries: 3
+  retry_delay_seconds: 2.0
+  min_request_gap_seconds: 3.0 # Guard against aggressive polling
+
+  # Target Indices to track
+  indices:
+    - "NIFTY 50"
+    - "NIFTY BANK"
+    - "NIFTY FINANCIAL SERVICES"
+    - "NIFTY IT"
+    - "NIFTY AUTO"
+    - "NIFTY FMCG"
+    - "NIFTY PHARMA"
+    - "NIFTY METAL"
+    - "NIFTY PSU BANK"
+    - "NIFTY PRIVATE BANK"
+    - "NIFTY OIL & GAS"
+    - "NIFTY REALTY"
+    - "NIFTY MEDIA"
+    - "NIFTY CONSUMER DURABLES"
+    - "INDIA VIX"
+
+  # Macro indicators
+  macro_tickers:
+    brent_crude: "BZ=F"
+    wti_crude: "CL=F"
+    usd_inr: "USDINR=X"
+    sp500: "^GSPC"
+    nasdaq: "^IXIC"
+    nikkei: "^N225"
+
+nse:
+  base_url: "https://www.nseindia.com"
+  all_indices_endpoint: "/api/allIndices"
+  session_refresh_minutes: 4
+
+database:
+  sqlite_path: "data/raw/market_data.db"
+  echo_sql: false
+
+logging:
+  level: "INFO"
+  format: "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
