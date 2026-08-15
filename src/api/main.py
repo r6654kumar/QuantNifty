@@ -11,6 +11,7 @@ from src.backtest.engine import BacktestEngine
 from src.data.collector import DataCollector
 from src.db.connection import get_db_session
 from src.db.models import IndexSnapshot, MacroSnapshot
+from src.signals.ai_summary import AISummaryEngine
 from src.utils.logging_config import setup_logger
 
 logger = setup_logger("quant_nifty.api")
@@ -29,12 +30,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global collector instance
+# Global instances
 collector = DataCollector(config_path="config/settings.yaml")
 backtest_engine = BacktestEngine(
     score_engine=collector.score_engine,
     feature_engine=collector.feature_engine,
 )
+ai_summary_engine = AISummaryEngine()
 
 # Static files path
 static_dir = Path(__file__).resolve().parent.parent.parent / "static"
@@ -50,11 +52,19 @@ def health_check():
 @app.get("/api/snapshot")
 def get_live_snapshot(refresh: bool = False):
     """
-    Returns the latest market snapshot, engineered features, and directional sector score.
-    If refresh=True, queries live NSE/Yahoo endpoints and updates the database unconditionally.
+    Returns the latest market snapshot, engineered features, directional sector score,
+    and AI quantitative intelligence briefing with options trade recommendations.
     """
     result = collector.collect_once(force=refresh)
     market_closed = result.get("market_closed", False)
+
+    ai_summary = ai_summary_engine.generate_summary(
+        features=result.get("features"),
+        signal=result.get("signal"),
+        indices=result.get("indices", {}),
+        macro_data=result.get("macro", {}),
+    )
+
     return {
         "timestamp": result["timestamp"].isoformat(),
         "market_closed": market_closed,
@@ -63,6 +73,7 @@ def get_live_snapshot(refresh: bool = False):
         "macro": {k: v.model_dump() for k, v in result["macro"].items()} if result["macro"] else {},
         "features": result["features"].model_dump() if result["features"] else None,
         "signal": result["signal"].model_dump() if result["signal"] else None,
+        "ai_summary": ai_summary.model_dump(),
     }
 
 

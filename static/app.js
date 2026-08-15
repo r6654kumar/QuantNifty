@@ -154,6 +154,79 @@ function renderSnapshot(data) {
     renderSectorsTable(indices, features);
     updateRelativeStrengthChart(features);
   }
+
+  // 8. AI Market Intelligence & Options Playbook
+  if (data.ai_summary) {
+    renderAISummary(data.ai_summary);
+  }
+}
+
+function renderAISummary(summary) {
+  if (!summary) return;
+
+  // 1. Headline & Badges
+  document.getElementById('aiHeadline').innerText = summary.headline || 'Quant briefing synthesized';
+  
+  const regimeEl = document.getElementById('aiRegimeTag');
+  const regime = summary.regime || 'NEUTRAL';
+  const regimeClass = regime.includes('BULLISH') ? 'bullish' : (regime.includes('BEARISH') ? 'bearish' : 'neutral');
+  regimeEl.className = `tag-regime ${regimeClass}`;
+  regimeEl.innerText = regime.replace('_', ' ');
+
+  const confTag = document.getElementById('aiConfidenceTag');
+  confTag.innerText = `${summary.driver_consensus_pct}% Consensus`;
+
+  // Dynamic card glow based on regime
+  const aiCard = document.getElementById('aiCard');
+  if (regimeClass === 'bullish') {
+    aiCard.style.borderColor = 'rgba(16, 185, 129, 0.45)';
+    aiCard.style.boxShadow = '0 10px 30px rgba(16, 185, 129, 0.15)';
+  } else if (regimeClass === 'bearish') {
+    aiCard.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+    aiCard.style.boxShadow = '0 10px 30px rgba(239, 68, 68, 0.15)';
+  } else {
+    aiCard.style.borderColor = 'rgba(234, 179, 8, 0.45)';
+    aiCard.style.boxShadow = '0 10px 30px rgba(234, 179, 8, 0.12)';
+  }
+
+  // 2. Narrative Columns
+  document.getElementById('aiExecSynthesis').innerText = summary.executive_synthesis || '';
+  document.getElementById('aiSectorFlow').innerText = summary.sector_flow_narrative || '';
+  document.getElementById('aiMacroClimate').innerText = summary.macro_risk_narrative || '';
+
+  // 3. Bullets
+  const bulletsBox = document.getElementById('aiBulletsBox');
+  if (summary.key_bullet_points && summary.key_bullet_points.length > 0) {
+    bulletsBox.innerHTML = summary.key_bullet_points
+      .map(b => `<div class="ai-bullet-item">${b}</div>`)
+      .join('');
+    bulletsBox.style.display = 'flex';
+  } else {
+    bulletsBox.style.display = 'none';
+  }
+
+  // 4. Options Playbook
+  const opt = summary.options_playbook;
+  if (opt) {
+    const biasCard = document.getElementById('optionsBiasCard');
+    biasCard.className = `options-bias-card ${regimeClass}`;
+    document.getElementById('optionsBiasVal').innerText = opt.bias;
+    document.getElementById('optionsConfidenceVal').innerText = `Conviction: ${opt.confidence}`;
+
+    document.getElementById('optionsRecStrike').innerText = opt.recommended_strike;
+    document.getElementById('optionsAtmItm').innerText = `ATM: ${opt.atm_strike} | ITM: ${opt.itm_strike}`;
+    document.getElementById('optionsTargetVal').innerText = opt.profit_target_zone;
+    document.getElementById('optionsSlVal').innerText = opt.stop_loss_invalidation;
+    document.getElementById('optionsIvText').innerText = opt.iv_regime;
+
+    const divAlert = document.getElementById('optionsDivergenceAlert');
+    if (opt.risk_divergence_warning) {
+      document.getElementById('optionsDivergenceText').innerText = opt.risk_divergence_warning;
+      divAlert.style.display = 'flex';
+    } else {
+      divAlert.style.display = 'none';
+    }
+  }
 }
 
 function updateBar(barId, valId, score) {
