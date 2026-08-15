@@ -16,7 +16,7 @@ jobs:
         env:
           SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL }}
         run: |
-          TARGET_URL="${SERVICE_URL:-https://quantnifty-dashboard.onrender.com/api/health}"
+          TARGET_URL="${SERVICE_URL:-https://quantnifty.onrender.com/api/health}"
           echo "Pinging Render service at: $TARGET_URL"
           response=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET_URL")
           echo "Received HTTP status: $response"
