@@ -36,6 +36,39 @@ collector:
     nasdaq: "^IXIC"
     nikkei: "^N225"
 
+# ==============================================================================
+# Signal & Sector Weighting Model Configuration
+# ==============================================================================
+signals:
+  # Sector weights roughly aligned with NIFTY 50 sectoral representation
+  sector_weights:
+    "NIFTY BANK": 0.28
+    "NIFTY FINANCIAL SERVICES": 0.12
+    "NIFTY IT": 0.15
+    "NIFTY OIL & GAS": 0.12
+    "NIFTY AUTO": 0.08
+    "NIFTY FMCG": 0.08
+    "NIFTY METAL": 0.05
+    "NIFTY PHARMA": 0.04
+    "NIFTY CONSUMER DURABLES": 0.03
+    "NIFTY REALTY": 0.02
+    "NIFTY PSU BANK": 0.02
+    "NIFTY MEDIA": 0.01
+
+  # Composite score component contributions (must sum to 1.0)
+  component_weights:
+    momentum: 0.40
+    relative_strength: 0.25
+    breadth: 0.20
+    macro: 0.15
+
+  # Regime classification thresholds (-100 to +100)
+  regime_thresholds:
+    bullish: 60.0
+    mildly_bullish: 30.0
+    mildly_bearish: -30.0
+    bearish: -60.0
+
 nse:
   base_url: "https://www.nseindia.com"
   all_indices_endpoint: "/api/allIndices"
