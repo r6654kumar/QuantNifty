@@ -85,12 +85,38 @@ def get_live_snapshot(refresh: bool = False):
     result = collector.collect_once(force=refresh)
     market_closed = result.get("market_closed", False)
 
-    ai_summary = ai_summary_engine.generate_summary(
-        features=result.get("features"),
-        signal=result.get("signal"),
-        indices=result.get("indices", {}),
-        macro_data=result.get("macro", {}),
-    )
+    # Only regenerate the AI summary when fresh data was fetched.
+    # If the collector returned a cached result, reuse the last cached summary
+    # if available to avoid repeated AI calls when nothing changed.
+    ai_summary = None
+    if result.get("fetched", True):
+        ai_summary = ai_summary_engine.generate_summary(
+            features=result.get("features"),
+            signal=result.get("signal"),
+            indices=result.get("indices", {}),
+            macro_data=result.get("macro", {}),
+        )
+        # Cache the generated summary on the collector for reuse
+        try:
+            if isinstance(collector._last_result, dict):
+                collector._last_result["ai_summary"] = ai_summary
+        except Exception:
+            pass
+    else:
+        # Reuse cached ai_summary if present, otherwise fall back to generating
+        ai_summary = None
+        try:
+            if collector._last_result and isinstance(collector._last_result, dict):
+                ai_summary = collector._last_result.get("ai_summary")
+        except Exception:
+            ai_summary = None
+        if ai_summary is None:
+            ai_summary = ai_summary_engine.generate_summary(
+                features=result.get("features"),
+                signal=result.get("signal"),
+                indices=result.get("indices", {}),
+                macro_data=result.get("macro", {}),
+            )
 
     return {
         "timestamp": result["timestamp"].isoformat(),

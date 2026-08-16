@@ -98,6 +98,8 @@ class DataCollector:
         if not is_open and not force and self._last_result is not None:
             res = dict(self._last_result)
             res["market_closed"] = True
+            # Indicate that no fresh fetch occurred in this call
+            res["fetched"] = False
             return res
 
         cycle_time = datetime.now(timezone.utc)
@@ -141,6 +143,8 @@ class DataCollector:
             "timestamp": cycle_time,
             "market_closed": not is_open,
         }
+        # Indicate that this result was produced by an actual fetch/run
+        result["fetched"] = True
         self._last_result = result
         return result
 
