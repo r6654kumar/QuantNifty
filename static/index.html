@@ -71,21 +71,21 @@
           <!-- Component Score Bars -->
           <div class="component-breakdown">
             <div class="comp-row">
-              <span class="comp-label">Sector Momentum (40%)</span>
+              <span class="comp-label">Sector Momentum (35%)</span>
               <div class="progress-bar-bg">
                 <div class="progress-fill" id="fillMom" style="width: 50%;"></div>
               </div>
               <span class="comp-val" id="valMom">0.0</span>
             </div>
             <div class="comp-row">
-              <span class="comp-label">Relative Strength (25%)</span>
+              <span class="comp-label">Relative Strength (20%)</span>
               <div class="progress-bar-bg">
                 <div class="progress-fill" id="fillRs" style="width: 50%;"></div>
               </div>
               <span class="comp-val" id="valRs">0.0</span>
             </div>
             <div class="comp-row">
-              <span class="comp-label">Market Breadth (20%)</span>
+              <span class="comp-label">Market Breadth (15%)</span>
               <div class="progress-bar-bg">
                 <div class="progress-fill" id="fillBreadth" style="width: 50%;"></div>
               </div>
@@ -98,7 +98,23 @@
               </div>
               <span class="comp-val" id="valMacro">0.0</span>
             </div>
+            <!-- Phase 5: New signal components -->
+            <div class="comp-row">
+              <span class="comp-label">Style Rotation (10%) <span class="comp-tag">NEW</span></span>
+              <div class="progress-bar-bg">
+                <div class="progress-fill" id="fillStyle" style="width: 50%;"></div>
+              </div>
+              <span class="comp-val" id="valStyle">0.0</span>
+            </div>
+            <div class="comp-row">
+              <span class="comp-label">Banking Structure (5%) <span class="comp-tag">NEW</span></span>
+              <div class="progress-bar-bg">
+                <div class="progress-fill" id="fillBanking" style="width: 50%;"></div>
+              </div>
+              <span class="comp-val" id="valBanking">0.0</span>
+            </div>
           </div>
+
         </div>
 
         <!-- Market Breadth Card -->
@@ -137,11 +153,81 @@
         <div class="glass-card card-macro">
           <div class="card-header">
             <h3>Global Macro & Risk Drivers</h3>
-            <span class="tag-live">Global Proxies</span>
+            <span class="tag-live">12 Signals</span>
           </div>
           <div class="macro-grid" id="macroGrid">
             <!-- Rendered by JS -->
           </div>
+        </div>
+      </div>
+
+      <!-- Row 1.25: NEW — Rate Expectations & FII/DII Flow Cards -->
+      <div class="grid-2">
+        <!-- GSec Yield Card (Phase 3) -->
+        <div class="glass-card card-gsec" id="gsecCard">
+          <div class="card-header">
+            <div>
+              <h3>India 10Y GSec Yield</h3>
+              <p class="card-desc">Rate expectations signal — rising yields compress equity valuations</p>
+            </div>
+            <span class="tag-info" id="gsecStatusTag">Fetching...</span>
+          </div>
+          <div class="gsec-body">
+            <div class="gsec-yield-display">
+              <div class="gsec-yield-val" id="gsecYieldVal">--.--%</div>
+              <div class="gsec-yield-bps" id="gsecYieldBps">-- bps today</div>
+            </div>
+            <div class="gsec-signal-bar">
+              <div class="comp-row" style="margin-top: 8px;">
+                <span class="comp-label">Rate Expectations Score</span>
+                <div class="progress-bar-bg">
+                  <div class="progress-fill" id="fillRate" style="width: 50%;"></div>
+                </div>
+                <span class="comp-val" id="valRate">0.0</span>
+              </div>
+            </div>
+            <div class="gsec-legend">
+              <span class="gsec-zone bearish-zone">&gt;7.00% — Tightening (Bearish)</span>
+              <span class="gsec-zone neutral-zone">6.80–7.00% — Neutral</span>
+              <span class="gsec-zone bullish-zone">&lt;6.80% — Easing (Bullish)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FII/DII Flows Card (Phase 4) -->
+        <div class="glass-card card-fii" id="fiiCard">
+          <div class="card-header">
+            <div>
+              <h3>FII / DII Daily Flows</h3>
+              <p class="card-desc">Structural capital flow signal — leading indicator for 1–3 day trend</p>
+            </div>
+            <span class="tag-info" id="fiiStatusTag">End-of-Day</span>
+          </div>
+          <div class="fii-flow-grid">
+            <div class="fii-stat-box fii-box">
+              <div class="fii-label">FII Net Flow</div>
+              <div class="fii-val" id="fiiFIIVal">-- Cr</div>
+              <div class="fii-sub">Foreign Institutional</div>
+            </div>
+            <div class="fii-stat-box dii-box">
+              <div class="fii-label">DII Net Flow</div>
+              <div class="fii-val" id="fiiDIIVal">-- Cr</div>
+              <div class="fii-sub">Domestic Institutional</div>
+            </div>
+            <div class="fii-stat-box net-box">
+              <div class="fii-label">Net Combined</div>
+              <div class="fii-val" id="fiiNetVal">-- Cr</div>
+              <div class="fii-sub">FII + DII</div>
+            </div>
+          </div>
+          <div class="comp-row" style="margin-top: 12px;">
+            <span class="comp-label">FII Flow Signal</span>
+            <div class="progress-bar-bg">
+              <div class="progress-fill" id="fillFII" style="width: 50%;"></div>
+            </div>
+            <span class="comp-val" id="valFII">0.0</span>
+          </div>
+          <div class="fii-note" id="fiiDateNote">Data as of: --</div>
         </div>
       </div>
 

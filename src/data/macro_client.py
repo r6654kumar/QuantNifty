@@ -23,12 +23,22 @@ class MacroClient:
     """Client to retrieve global commodities, currencies, and index proxies."""
 
     DEFAULT_TICKERS = {
+        # --- Existing: US & Japan equity proxies + commodities + FX ---
         "brent_crude": "BZ=F",
         "wti_crude": "CL=F",
         "usd_inr": "USDINR=X",
         "sp500": "^GSPC",
         "nasdaq": "^IXIC",
         "nikkei": "^N225",
+        # --- Phase 2 New: Safe haven, growth proxy, currency, Asia sentiment ---
+        "gold_spot": "GC=F",           # Safe-haven proxy; inverse risk appetite
+        "copper_spot": "HG=F",         # "Dr. Copper" — leading economic growth indicator
+        "dxy": "DX-Y.NYB",                 # US Dollar Index (ICE futures; inverse of INR/EM strength)
+        "hang_seng": "^HSI",           # China/Asia macro sentiment (trades pre-Indian open)
+        "kospi": "^KS11",              # Korea — semiconductor & tech cycle bellwether
+        "singapore_sti": "^STI",       # Singapore STI — Asia regional proxy
+        # Phase 3 Option B: India 10Y GSec Yield via yfinance instead of scraping
+        "india_gsec_10y": "^INDIAGOV10Y", # Note: currently delisted on YF, falls back gracefully
     }
 
     def __init__(self, tickers: Optional[Dict[str, str]] = None):
