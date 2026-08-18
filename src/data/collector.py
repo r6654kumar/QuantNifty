@@ -7,7 +7,6 @@ from rich.console import Console
 from rich.table import Table
 
 from src.data.fii_client import FIIClient, FIIDIISnapshot
-from src.data.gsec_client import GSECYieldClient, GSECYieldData
 from src.data.macro_client import MacroClient
 from src.data.nse_client import IndexData, NSEClient
 from src.db.connection import get_db_session, init_db
@@ -65,8 +64,6 @@ class DataCollector:
             component_weights=signals_cfg.get("component_weights"),
             regime_thresholds=signals_cfg.get("regime_thresholds"),
         )
-        # Phase 3: GSec yield client (graceful fallback if scraping unavailable)
-        self.gsec_client = GSECYieldClient()
         # Phase 4: FII/DII flows client (graceful fallback if NSE endpoint unavailable)
         self.fii_client = FIIClient()
         # Cache last FII snapshot (end-of-day data; reuse across intraday cycles)
@@ -120,19 +117,23 @@ class DataCollector:
             logger.error(f"Error fetching NSE indices: {e}")
             indices = {}
 
-        # 2. Fetch Macro Indicators
+        # 2. Fetch Macro Indicators (Now includes GSec yield via Phase 3 Option B)
         try:
             macro_data = self.macro_client.fetch_all()
         except Exception as e:
             logger.error(f"Error fetching macro indicators: {e}")
             macro_data = {}
 
-        # 3. Phase 3: Fetch GSec Yield (graceful fallback to None)
-        gsec_data: Optional[GSECYieldData] = None
-        try:
-            gsec_data = self.gsec_client.fetch_10y_yield()
-        except Exception as e:
-            logger.warning(f"GSec yield fetch failed (non-fatal): {e}")
+        # Extract GSec Yield from Macro Data (Option B)
+        gsec_data = None
+        if "india_gsec_10y" in macro_data:
+            m = macro_data["india_gsec_10y"]
+            if m and getattr(m, "last_price", None) is not None:
+                # Mock a class structure similar to what feature engine expects
+                class DummyGSec:
+                    yield_percent = m.last_price
+                    change_bps = (m.change * 100.0) if m.change is not None else 0.0
+                gsec_data = DummyGSec()
 
         # 4. Phase 4: Fetch FII/DII Flows (end-of-day; cache across intraday cycles)
         # Refresh once per day — NSE publishes at ~16:30 IST
@@ -228,7 +229,7 @@ class DataCollector:
         macro_data: dict,
         features: Optional[MarketSnapshotFeatures] = None,
         signal: Optional[SignalBreakdown] = None,
-        gsec_data: Optional[GSECYieldData] = None,
+        gsec_data: Optional[any] = None,
         fii_snapshot: Optional[FIIDIISnapshot] = None,
     ):
         """Displays rich terminal table with live market snapshot and directional signal dashboard."""

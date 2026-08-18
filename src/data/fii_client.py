@@ -164,23 +164,24 @@ class FIIClient:
                         timestamp=now,
                     )
 
-        # Structure 2: list of participant rows (F&O endpoint)
+        # Structure 2: list of participant rows (F&O endpoint or TradeReact)
         if isinstance(data, list) and len(data) > 0:
             fii_row = next(
-                (r for r in data if str(r.get("clientType", "")).upper() in ("FII", "FII/FPI")),
+                (r for r in data if str(r.get("clientType", r.get("category", ""))).upper() in ("FII", "FII/FPI")),
                 None,
             )
             dii_row = next(
-                (r for r in data if str(r.get("clientType", "")).upper() == "DII"),
+                (r for r in data if str(r.get("clientType", r.get("category", ""))).upper() == "DII"),
                 None,
             )
             if fii_row:
-                fii = self._safe_float(fii_row, ["netAmount", "net", "buyAmount"])
-                dii = self._safe_float(dii_row, ["netAmount", "net", "buyAmount"]) if dii_row else 0.0
+                fii = self._safe_float(fii_row, ["netAmount", "net", "buyAmount", "netValue"])
+                dii = self._safe_float(dii_row, ["netAmount", "net", "buyAmount", "netValue"]) if dii_row else 0.0
                 if fii is not None:
-                    dii = dii or 0.0
+                    # Also try to get date
+                    date_str = fii_row.get("date", today_str)
                     return FIIDIISnapshot(
-                        date=today_str,
+                        date=str(date_str)[:11],
                         fii_inflow_crores=fii,
                         dii_inflow_crores=dii,
                         net_flow_crores=round(fii + dii, 2),

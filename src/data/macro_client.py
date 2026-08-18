@@ -37,6 +37,8 @@ class MacroClient:
         "hang_seng": "^HSI",           # China/Asia macro sentiment (trades pre-Indian open)
         "kospi": "^KS11",              # Korea — semiconductor & tech cycle bellwether
         "singapore_sti": "^STI",       # Singapore STI — Asia regional proxy
+        # Phase 3 Option B: India 10Y GSec Yield via yfinance instead of scraping
+        "india_gsec_10y": "^INDIAGOV10Y", # Note: currently delisted on YF, falls back gracefully
     }
 
     def __init__(self, tickers: Optional[Dict[str, str]] = None):
