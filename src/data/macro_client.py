@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Dict, Optional
+import math
 from pydantic import BaseModel, Field
 import yfinance as yf
 
@@ -49,14 +50,40 @@ class MacroClient:
 
                 if not hist.empty:
                     last_price = float(hist["Close"].iloc[-1])
+                    
+                    # Defensive: Check if last_price is valid (not NaN, not inf)
+                    if not math.isfinite(last_price):
+                        logger.warning(
+                            f"Invalid last_price for macro ticker {key} ({symbol}): {last_price} "
+                            f"(non-finite value). Skipping."
+                        )
+                        continue
+                    
+                    # Get previous close, defaulting to open if only 1 bar available
                     prev_close = float(hist["Close"].iloc[-2]) if len(hist) > 1 else float(hist["Open"].iloc[0])
+                    
+                    # Defensive: Check if prev_close is valid (not NaN, not inf, not zero)
+                    if not math.isfinite(prev_close) or prev_close == 0.0:
+                        logger.warning(
+                            f"Invalid prev_close for macro ticker {key} ({symbol}): {prev_close} "
+                            f"(non-finite or zero). Skipping."
+                        )
+                        continue
+                    
+                    # Compute change and percent change
                     change = last_price - prev_close
-                    pct_change = (change / prev_close) * 100.0 if prev_close else 0.0
+                    pct_change = (change / prev_close) * 100.0
+                    
+                    # Defensive: Sanitize to 0.0 if somehow NaN (extra safety)
+                    if not math.isfinite(change):
+                        change = 0.0
+                    if not math.isfinite(pct_change):
+                        pct_change = 0.0
 
                     results[key] = MacroData(
                         indicator_key=key,
                         ticker_symbol=symbol,
-                        last_price=last_price,
+                        last_price=round(last_price, 4),
                         change=round(change, 4),
                         percent_change=round(pct_change, 4),
                         timestamp=now,
