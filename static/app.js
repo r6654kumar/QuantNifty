@@ -74,7 +74,7 @@ async function fetchLiveSnapshot(refresh = false) {
 }
 
 function renderSnapshot(data) {
-  const { indices, macro, features, signal, timestamp } = data;
+  const { indices, macro, features, signal, timestamp, gsec_yield, fii_flows } = data;
 
   // 1. Sync Time
   const syncDate = new Date(timestamp);
@@ -123,11 +123,18 @@ function renderSnapshot(data) {
     // Agreement Tag
     document.getElementById('signalAgreementTag').innerText = `${Math.round(signal.agreement_ratio * 100)}% Alignment`;
 
-    // Breakdown Bars
+    // Breakdown Bars — updated to 6-component architecture
     updateBar('fillMom', 'valMom', signal.momentum_score);
     updateBar('fillRs', 'valRs', signal.relative_strength_score);
     updateBar('fillBreadth', 'valBreadth', signal.breadth_score);
     updateBar('fillMacro', 'valMacro', signal.macro_score);
+    // Phase 5: New components
+    updateBar('fillStyle', 'valStyle', signal.style_rotation_score || 0);
+    updateBar('fillBanking', 'valBanking', signal.banking_risk_appetite_score || 0);
+    // Phase 3: Rate expectations (surfaced as sub-signal)
+    updateBar('fillRate', 'valRate', signal.rate_expectations_score || 0);
+    // Phase 4: FII flow signal
+    updateBar('fillFII', 'valFII', signal.fii_flow_signal || 0);
   }
 
   // 5. Market Breadth
@@ -155,7 +162,13 @@ function renderSnapshot(data) {
     updateRelativeStrengthChart(features);
   }
 
-  // 8. AI Market Intelligence & Options Playbook
+  // 8. Phase 3: GSec Yield Card
+  renderGSecCard(gsec_yield, signal);
+
+  // 9. Phase 4: FII/DII Flows Card
+  renderFIICard(fii_flows, signal);
+
+  // 10. AI Market Intelligence & Options Playbook
   if (data.ai_summary) {
     renderAISummary(data.ai_summary);
   }
@@ -294,17 +307,104 @@ function updateBar(barId, valId, score) {
   }
 }
 
+/* ==========================================================================
+   Phase 3: GSec Yield Card Renderer
+   ========================================================================== */
+function renderGSecCard(gsecData, signal) {
+  const statusTag = document.getElementById('gsecStatusTag');
+  const yieldVal = document.getElementById('gsecYieldVal');
+  const yieldBps = document.getElementById('gsecYieldBps');
+
+  if (!gsecData) {
+    if (statusTag) statusTag.innerText = 'Unavailable';
+    if (yieldVal) yieldVal.innerText = 'N/A';
+    if (yieldBps) yieldBps.innerText = 'Scraper offline — signal defaults to 0';
+    return;
+  }
+
+  const yp = gsecData.yield_percent;
+  const bps = gsecData.change_bps || 0;
+
+  if (yieldVal) yieldVal.innerText = `${yp.toFixed(2)}%`;
+  if (yieldBps) {
+    const bpsSign = bps >= 0 ? '+' : '';
+    yieldBps.innerText = `${bpsSign}${bps.toFixed(1)} bps intraday`;
+    yieldBps.style.color = bps > 0 ? 'var(--accent-bearish)' : (bps < 0 ? 'var(--accent-bullish)' : 'var(--text-muted)');
+  }
+
+  // Color-code yield value based on zone
+  if (yieldVal) {
+    if (yp > 7.00) {
+      yieldVal.style.color = 'var(--accent-bearish)';
+      if (statusTag) { statusTag.innerText = 'Tightening Zone'; statusTag.className = 'tag-regime bearish'; }
+    } else if (yp < 6.80) {
+      yieldVal.style.color = 'var(--accent-bullish)';
+      if (statusTag) { statusTag.innerText = 'Easing Zone'; statusTag.className = 'tag-regime bullish'; }
+    } else {
+      yieldVal.style.color = 'var(--accent-warning)';
+      if (statusTag) { statusTag.innerText = 'Neutral Zone'; statusTag.className = 'tag-regime neutral'; }
+    }
+  }
+}
+
+/* ==========================================================================
+   Phase 4: FII/DII Flows Card Renderer
+   ========================================================================== */
+function renderFIICard(fiiData, signal) {
+  const statusTag = document.getElementById('fiiStatusTag');
+  const fiiVal = document.getElementById('fiiFIIVal');
+  const diiVal = document.getElementById('fiiDIIVal');
+  const netVal = document.getElementById('fiiNetVal');
+  const dateNote = document.getElementById('fiiDateNote');
+
+  if (!fiiData) {
+    if (statusTag) statusTag.innerText = 'Awaiting Data';
+    if (fiiVal) fiiVal.innerText = 'N/A';
+    if (diiVal) diiVal.innerText = 'N/A';
+    if (netVal) netVal.innerText = 'N/A';
+    if (dateNote) dateNote.innerText = 'NSE publishes at ~16:30 IST — using previous day until available';
+    return;
+  }
+
+  const fii = fiiData.fii_inflow_crores || 0;
+  const dii = fiiData.dii_inflow_crores || 0;
+  const net = fiiData.net_flow_crores || 0;
+
+  const fmt = (v) => `${v >= 0 ? '+' : ''}₹${Math.abs(v).toLocaleString('en-IN', { maximumFractionDigits: 0 })} Cr`;
+  const fmtColor = (v) => v >= 0 ? 'var(--accent-bullish)' : 'var(--accent-bearish)';
+
+  if (fiiVal) { fiiVal.innerText = fmt(fii); fiiVal.style.color = fmtColor(fii); }
+  if (diiVal) { diiVal.innerText = fmt(dii); diiVal.style.color = fmtColor(dii); }
+  if (netVal) { netVal.innerText = fmt(net); netVal.style.color = fmtColor(net); }
+  if (dateNote) dateNote.innerText = `Data as of: ${fiiData.date || '--'}`;
+
+  // Status tag
+  if (statusTag) {
+    if (net > 500) { statusTag.innerText = 'Net Bullish'; statusTag.className = 'tag-regime bullish'; }
+    else if (net < -500) { statusTag.innerText = 'Net Bearish'; statusTag.className = 'tag-regime bearish'; }
+    else { statusTag.innerText = 'Flows Neutral'; statusTag.className = 'tag-info'; }
+  }
+}
+
 function renderMacroGrid(macro) {
   const grid = document.getElementById('macroGrid');
   grid.innerHTML = '';
 
   const labels = {
+    // Existing
     brent_crude: 'Brent Crude',
     wti_crude: 'WTI Crude',
     usd_inr: 'USD / INR',
     sp500: 'S&P 500',
     nasdaq: 'Nasdaq',
     nikkei: 'Nikkei 225',
+    // Phase 2 New
+    gold_spot: 'Gold Spot',
+    copper_spot: 'Copper',
+    dxy: 'DXY (USD Index)',
+    hang_seng: 'Hang Seng',
+    kospi: 'KOSPI',
+    singapore_sti: 'Singapore STI',
   };
 
   for (const [key, item] of Object.entries(macro)) {

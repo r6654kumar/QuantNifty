@@ -126,6 +126,10 @@ def get_live_snapshot(refresh: bool = False):
         "macro": {k: v.model_dump() for k, v in result["macro"].items()} if result["macro"] else {},
         "features": result["features"].model_dump() if result["features"] else None,
         "signal": result["signal"].model_dump() if result["signal"] else None,
+        # Phase 3: India 10Y GSec yield (rate expectations signal)
+        "gsec_yield": result["gsec"].model_dump() if result.get("gsec") else None,
+        # Phase 4: FII/DII daily flows (structural capital flow signal)
+        "fii_flows": result["fii"].model_dump() if result.get("fii") else None,
         "ai_summary": ai_summary.model_dump(),
     }
 

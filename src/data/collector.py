@@ -6,6 +6,8 @@ import yaml
 from rich.console import Console
 from rich.table import Table
 
+from src.data.fii_client import FIIClient, FIIDIISnapshot
+from src.data.gsec_client import GSECYieldClient, GSECYieldData
 from src.data.macro_client import MacroClient
 from src.data.nse_client import IndexData, NSEClient
 from src.db.connection import get_db_session, init_db
@@ -63,6 +65,12 @@ class DataCollector:
             component_weights=signals_cfg.get("component_weights"),
             regime_thresholds=signals_cfg.get("regime_thresholds"),
         )
+        # Phase 3: GSec yield client (graceful fallback if scraping unavailable)
+        self.gsec_client = GSECYieldClient()
+        # Phase 4: FII/DII flows client (graceful fallback if NSE endpoint unavailable)
+        self.fii_client = FIIClient()
+        # Cache last FII snapshot (end-of-day data; reuse across intraday cycles)
+        self._last_fii_snapshot: Optional[FIIDIISnapshot] = None
         self._last_result = None
 
         # Initialize database schema
@@ -119,27 +127,50 @@ class DataCollector:
             logger.error(f"Error fetching macro indicators: {e}")
             macro_data = {}
 
-        # 3. Persist Raw Data to Database
+        # 3. Phase 3: Fetch GSec Yield (graceful fallback to None)
+        gsec_data: Optional[GSECYieldData] = None
+        try:
+            gsec_data = self.gsec_client.fetch_10y_yield()
+        except Exception as e:
+            logger.warning(f"GSec yield fetch failed (non-fatal): {e}")
+
+        # 4. Phase 4: Fetch FII/DII Flows (end-of-day; cache across intraday cycles)
+        # Refresh once per day — NSE publishes at ~16:30 IST
+        try:
+            fresh_fii = self.fii_client.fetch_daily_flows()
+            if fresh_fii is not None:
+                self._last_fii_snapshot = fresh_fii
+        except Exception as e:
+            logger.warning(f"FII/DII flow fetch failed (non-fatal): {e}")
+        fii_flows: Optional[Dict] = None
+        if self._last_fii_snapshot is not None:
+            fii_flows = self._last_fii_snapshot.model_dump()
+
+        # 5. Persist Raw Data to Database
         self._persist_data(indices, macro_data, cycle_time)
 
-        # 4. Feature Extraction & Signal Scoring
+        # 6. Feature Extraction & Signal Scoring
         features = None
         signal = None
         if "NIFTY 50" in indices or "NIFTY 50".upper() in indices:
             try:
-                features = self.feature_engine.process_snapshot(indices, macro_data, cycle_time)
-                signal = self.score_engine.evaluate(features)
+                features = self.feature_engine.process_snapshot(
+                    indices, macro_data, gsec_data=gsec_data, timestamp=cycle_time
+                )
+                signal = self.score_engine.evaluate(features, fii_flows=fii_flows)
             except Exception as e:
                 logger.error(f"Error evaluating features/signals: {e}")
 
-        # 5. Display Formatted Dashboard
-        self._display_summary(indices, macro_data, features, signal)
+        # 7. Display Formatted Dashboard
+        self._display_summary(indices, macro_data, features, signal, gsec_data=gsec_data, fii_snapshot=self._last_fii_snapshot)
 
         result = {
             "indices": indices,
             "macro": macro_data,
             "features": features,
             "signal": signal,
+            "gsec": gsec_data,
+            "fii": self._last_fii_snapshot,
             "timestamp": cycle_time,
             "market_closed": not is_open,
         }
@@ -197,6 +228,8 @@ class DataCollector:
         macro_data: dict,
         features: Optional[MarketSnapshotFeatures] = None,
         signal: Optional[SignalBreakdown] = None,
+        gsec_data: Optional[GSECYieldData] = None,
+        fii_snapshot: Optional[FIIDIISnapshot] = None,
     ):
         """Displays rich terminal table with live market snapshot and directional signal dashboard."""
         # Index Table
@@ -292,6 +325,21 @@ class DataCollector:
             score_table.add_row("  - Relative Strength Score", f"{signal.relative_strength_score:+.1f}")
             score_table.add_row("  - Market Breadth Score", f"{signal.breadth_score:+.1f} ({features.market_breadth.advancing_sectors} Adv / {features.market_breadth.declining_sectors} Dec)")
             score_table.add_row("  - Global Macro Score", f"{signal.macro_score:+.1f}")
+            # Phase 5 new components
+            score_table.add_row("  - Style Rotation Score", f"{signal.style_rotation_score:+.1f} (Midcap vs Largecap)")
+            score_table.add_row("  - Banking Structure Score", f"{signal.banking_risk_appetite_score:+.1f} (Pvt vs PSU Bank)")
+            # Phase 3 sub-signal
+            if features.india_gsec_10y_yield is not None:
+                score_table.add_row(
+                    "  - Rate Expectations (GSec)",
+                    f"{signal.rate_expectations_score:+.1f} ({features.india_gsec_10y_yield:.2f}% yield)"
+                )
+            # Phase 4 sub-signal
+            if fii_snapshot is not None:
+                score_table.add_row(
+                    "  - FII Flow Signal",
+                    f"{signal.fii_flow_signal:+.1f} (FII {fii_snapshot.fii_inflow_crores:+.0f} Cr, DII {fii_snapshot.dii_inflow_crores:+.0f} Cr)"
+                )
 
             console.print(score_table)
 

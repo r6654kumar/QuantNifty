@@ -32,7 +32,15 @@ class MarketSnapshotFeatures(BaseModel):
     nifty_intraday_range_pct: Optional[float] = None
     india_vix: Optional[float] = None
     india_vix_change_pct: Optional[float] = None
-    
+
+    # Phase 3: Rate expectations signal — India 10Y GSec yield
+    india_gsec_10y_yield: Optional[float] = None   # e.g. 6.95 for 6.95%
+    india_gsec_change_bps: Optional[float] = None  # Intraday change in basis points
+
+    # Phase 5: Style rotation signal — NIFTY 50 vs NIFTY Midcap 100
+    largecap_midcap_ratio: Optional[float] = None  # NIFTY 50 price / NIFTY Midcap 100 price
+    style_rotation_score: Optional[float] = None   # -100 (midcap leading) to +100 (largecap leading)
+
     sector_features: Dict[str, SectorFeatureSet] = Field(default_factory=dict)
     market_breadth: MarketBreadth = Field(default_factory=MarketBreadth)
     macro_returns: Dict[str, float] = Field(default_factory=dict)
@@ -48,14 +56,16 @@ class FeatureEngine:
         self,
         indices: Dict[str, any],
         macro_data: Optional[Dict[str, any]] = None,
+        gsec_data: Optional[any] = None,
         timestamp: Optional[datetime] = None,
     ) -> MarketSnapshotFeatures:
         """
         Extracts point-in-time features from a live or historical snapshot dictionary.
-        
+
         Args:
             indices: Dict mapping index_name -> IndexData/IndexSnapshot object.
             macro_data: Dict mapping indicator_key -> MacroData/MacroSnapshot object.
+            gsec_data: Optional GSECYieldData object from GSECYieldClient (Phase 3).
             timestamp: Snapshot evaluation time.
         """
         if not timestamp:
@@ -116,6 +126,27 @@ class FeatureEngine:
             for k, m in macro_data.items():
                 macro_ret_dict[k] = m.percent_change if hasattr(m, "percent_change") else 0.0
 
+        # 6. GSec Yield (Phase 3: Rate expectations signal)
+        gsec_yield = None
+        gsec_change_bps = None
+        if gsec_data is not None:
+            gsec_yield = getattr(gsec_data, "yield_percent", None)
+            gsec_change_bps = getattr(gsec_data, "change_bps", None)
+
+        # 7. Style Rotation Signal (Phase 5: Largecap vs Midcap)
+        largecap_midcap_ratio = None
+        style_rotation_score = None
+        midcap_data = indices.get("NIFTY MIDCAP 100")
+        if midcap_data is not None:
+            midcap_price = float(midcap_data.last_price)
+            if midcap_price and midcap_price > 0:
+                largecap_midcap_ratio = round(nifty_price / midcap_price, 6)
+            midcap_day_pct = midcap_data.percent_change or 0.0
+            # Spread: positive = midcap outperforming (risk-on), negative = largecap leading (risk-off)
+            # Research: 1% midcap outperformance → +50 pts style rotation score
+            spread = midcap_day_pct - nifty_day_pct
+            style_rotation_score = round(max(-100.0, min(100.0, (spread / 1.0) * 50.0)), 2)
+
         return MarketSnapshotFeatures(
             timestamp=timestamp,
             nifty_price=nifty_price,
@@ -124,6 +155,10 @@ class FeatureEngine:
             nifty_intraday_range_pct=nifty_range,
             india_vix=vix_price,
             india_vix_change_pct=vix_pct,
+            india_gsec_10y_yield=gsec_yield,
+            india_gsec_change_bps=gsec_change_bps,
+            largecap_midcap_ratio=largecap_midcap_ratio,
+            style_rotation_score=style_rotation_score,
             sector_features=sector_features,
             market_breadth=breadth,
             macro_returns=macro_ret_dict,

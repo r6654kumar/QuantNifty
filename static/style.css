@@ -1064,3 +1064,149 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   Phase 5: NEW badge on component bars
+   ========================================================================== */
+.comp-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #0a0d14;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+  border-radius: var(--radius-pill);
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   Phase 3: GSec Yield Card
+   ========================================================================== */
+.card-gsec {
+  border-left: 3px solid rgba(245, 158, 11, 0.5);
+}
+
+.gsec-body {
+  padding: 4px 0 0;
+}
+
+.gsec-yield-display {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.gsec-yield-val {
+  font-family: var(--font-mono);
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--accent-warning);
+  line-height: 1;
+}
+
+.gsec-yield-bps {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.gsec-legend {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.gsec-zone {
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+}
+
+.gsec-zone.bearish-zone {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--accent-bearish);
+}
+
+.gsec-zone.neutral-zone {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: var(--accent-warning);
+}
+
+.gsec-zone.bullish-zone {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: var(--accent-bullish);
+}
+
+/* ==========================================================================
+   Phase 4: FII/DII Flows Card
+   ========================================================================== */
+.card-fii {
+  border-left: 3px solid rgba(99, 102, 241, 0.5);
+}
+
+.fii-flow-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.fii-stat-box {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.fii-stat-box.fii-box {
+  background: rgba(6, 182, 212, 0.06);
+  border-color: rgba(6, 182, 212, 0.15);
+}
+
+.fii-stat-box.dii-box {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.15);
+}
+
+.fii-stat-box.net-box {
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.15);
+}
+
+.fii-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 6px;
+}
+
+.fii-val {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.fii-sub {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.fii-note {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 10px;
+  font-style: italic;
+}
